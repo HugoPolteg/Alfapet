@@ -68,10 +68,6 @@ function returnBricks(hand) {
     }
 }
 
-function checkWord(word) {
-
-}
-
 function shuffleHand(hand) {
     shuffle(hand);
     returnBricks(hand);
@@ -101,7 +97,22 @@ function dropHandler(ev) {
     ev.preventDefault();
     const data = ev.dataTransfer.getData("text");
     let dragged = document.getElementById(data);
-    ev.target.appendChild(dragged);
+    console.log(ev.target.className)
+    console.log(ev.target.nodeName)
+    let target = ev.target.className == "" ? ev.target.parentElement : ev.target;
+    if (target.className == "brick") {
+        return false
+    }
+    for(const child of target.children) {
+        if (child.className == "brick") {
+            return false;
+        } else {
+            child.style.display = "none";
+        }
+    }
+    target.textContent = "";
+    target.appendChild(dragged);
+    
 }
 
 const board = document.getElementById("board")
@@ -225,6 +236,7 @@ for(let i = 0; i < boardDimensions[0]; i++) {
             case "Y":
                 tile.textContent = "2W";
                 tile.classList.add("aquaTile")
+                break;
             case "N":
                 tile.classList.add("normalTile");
                 break;
@@ -237,6 +249,12 @@ for(let i = 0; i < boardDimensions[0]; i++) {
         tile.addEventListener("dragover", (event) => {
             dragOverHandler(event);
         });
+        if(tileType == "S") {
+            const img2 = tile.firstChild
+            img2.addEventListener("drop", () => {
+                return false;
+            })
+        }
         boardArray[i].push(tile)
         row.appendChild(tile);
     }
@@ -260,6 +278,3 @@ const returnButton = document.getElementById("return");
 returnButton.addEventListener("click", () => {
     returnBricks(hand)
 })
-
-let dictionary = loadDictionary();
-console.log(dictionary["ära"]);
