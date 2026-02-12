@@ -1,3 +1,15 @@
+let gameId = null;
+let playerId = null;
+let playerName = null;
+let currentGameState = null;
+let draggedTile = null;
+let selectedTiles = []
+const bricksContainer = document.getElementById("bricks");
+const lobbyScreen = document.getElementById('lobby');
+const gameScreen = document.getElementById('game');
+const createGameBtn = document.getElementById('create-game-btn');
+const joinGameBtn = document.getElementById('join-game-btn');
+const startGameBtn = document.getElementById('start-game-btn');
 function shuffle(array) {
   let currentIndex = array.length;
 
@@ -12,13 +24,14 @@ function shuffle(array) {
 }
 
 function addBrick(brickArr, id) {
-    const bricksContainer = document.getElementById("bricks");
+    let brickCharacter = brickArr[0];
+    let brickValue = brickArr[1];
     const newBrick = document.createElement("div");
     newBrick.classList.add("brick");
     newBrick.draggable = true;
+    newBrick.dataset.letter = brickCharacter
+    newBrick.dataset.value = brickValue
     newBrick.id = "Brick" + id;
-    let brickCharacter = brickArr[0];
-    let brickValue = brickArr[1];
     if(brickValue == 0) {
         switch(brickCharacter) {
             case "Blank":
@@ -30,7 +43,7 @@ function addBrick(brickArr, id) {
                 break;
             case "DownRightArrow":
                 const img = document.createElement("img");
-                img.src = "downRight.png";
+                img.src = "/static/images/downRight.png";
                 img.alt = "Down right arrow";
                 img.loading = "lazy";
                 img.style.width = "2.2vw";
@@ -38,7 +51,7 @@ function addBrick(brickArr, id) {
                 break;
             case "UpRightArrow":
                 const img2 = document.createElement("img");
-                img2.src = "upRight.png";
+                img2.src = "/static/images/upRight.png";
                 img2.alt = "Up right arrow";
                 img2.loading = "lazy";
                 img2.style.width = "2.2vw";
@@ -86,7 +99,10 @@ function draw(bag, nrBricks) {
 }
 
 function dragStartHandler(ev) {
-    ev.dataTransfer.setData("text", ev.target.id);
+    let inHand = ev.target.parentElement.id == "bricks"
+    let tileId = ev.target.id
+    draggedTile = {"id" : tileId, "fromHand" : inHand,
+        "value" : ev.target.dataset.value, "letter" : ev.target.dataset.letter}
 }
 
 function dragOverHandler(ev) {
@@ -95,25 +111,43 @@ function dragOverHandler(ev) {
 
 function dropHandler(ev) {
     ev.preventDefault();
-    const data = ev.dataTransfer.getData("text");
-    let dragged = document.getElementById(data);
-    console.log(ev.target.className)
-    console.log(ev.target.nodeName)
-    let target = ev.target.className == "" ? ev.target.parentElement : ev.target;
-    if (target.className == "brick") {
-        return false
+    if(!draggedTile) {
+        return false;
     }
-    for(const child of target.children) {
-        if (child.className == "brick") {
-            return false;
-        } else {
-            child.style.display = "none";
+    const tileId = draggedTile["id"]
+    const fromHand = draggedTile["fromHand"]
+    if(!fromHand) {
+        selectedTiles = selectedTiles.filter(
+            item => item['id'] != tileId
+        )
+    }
+    let dragged = document.getElementById(tileId);
+    let target = ev.target
+    if(target.id != "bricks") {
+        target = ev.target.className == "" ? ev.target.parentElement : ev.target;
+        if (target.className == "brick") {
+            return false
         }
+        for(const child of target.children) {
+            if (child.className == "brick") {
+                return false;
+            } else {
+                child.style.display = "none";
+            }
+        }
+        target.textContent = "";
+        //dict {row, col, letter, value}
+        let row = target.dataset.row
+        let col = target.dataset.col
+        selectedTiles.push({'id': tileId, 'row' : row, "col" : col,
+            "letter" : draggedTile['letter'], "value": draggedTile['value']})
     }
-    target.textContent = "";
+    draggedTile = null
     target.appendChild(dragged);
-    
+    console.log(selectedTiles)
 }
+
+
 
 const board = document.getElementById("board")
 const boardDimensions = [17, 17]
@@ -186,16 +220,53 @@ for(let i = 0; i < boardDimensions[0]; i++) {
     for(let x = 0; x < boardDimensions[1]; x++) {
         let tile = document.createElement("div");
         tile.classList.add("tile");
+        tile.dataset.row = i
+        tile.dataset.col = x
         let tileType = boardModel[i][x]
         switch(tileType) {
             case "S":
                 const img = document.createElement("img");
-                img.src = "star.png";
+                img.src = "/static/images/star.png";
                 img.alt = "Star";
                 img.loading = "lazy";
                 img.style.width = "2.2vw";
                 tile.classList.add("redTile");
                 tile.appendChild(img);
+                break;
+            case "N":
+                tile.classList.add("normalTile");
+                break;
+            case "L":
+                tile.textContent = "2L";
+                tile.classList.add("lightGreenTile");
+                break;
+            case "R":
+                tile.textContent = "2L";
+                tile.classList.add("redTile");
+                break;
+            case "D":
+                tile.textContent = "2L";
+                tile.classList.add("darkGreenTile")
+                break;
+            case "O":
+                tile.textContent = "3L";
+                tile.classList.add("orangeTile");
+                break;
+            case "I":
+                tile.textContent = "4L";
+                tile.classList.add("pinkTile");
+                break;
+            case "X":
+                tile.textContent = "4L";
+                tile.classList.add("blackTile");
+                break;
+            case "B":
+                tile.textContent = "2W";
+                tile.classList.add("blueTile");
+                break;
+            case "Y":
+                tile.textContent = "2W";
+                tile.classList.add("aquaTile")
                 break;
             case "G":
                 tile.textContent = "3W";
@@ -205,42 +276,6 @@ for(let i = 0; i < boardDimensions[0]; i++) {
                 tile.textContent = "4W";
                 tile.classList.add("purpleTile")
                 break;
-            case "L":
-                tile.textContent = "2L";
-                tile.classList.add("lightGreenTile");
-                break;
-            case "B":
-                tile.textContent = "2W";
-                tile.classList.add("blueTile");
-                break;
-            case "X":
-                tile.textContent = "4L";
-                tile.classList.add("blackTile");
-                break;
-            case "R":
-                tile.textContent = "2L";
-                tile.classList.add("redTile");
-                break;
-            case "O":
-                tile.textContent = "3L";
-                tile.classList.add("orangeTile");
-                break;
-            case "D":
-                tile.textContent = "2L";
-                tile.classList.add("darkGreenTile")
-                break;
-            case "I":
-                tile.textContent = "4L";
-                tile.classList.add("pinkTile");
-                break;
-            case "Y":
-                tile.textContent = "2W";
-                tile.classList.add("aquaTile")
-                break;
-            case "N":
-                tile.classList.add("normalTile");
-                break;
-
         }
         
         tile.addEventListener("drop", (event) => {
@@ -255,12 +290,87 @@ for(let i = 0; i < boardDimensions[0]; i++) {
                 return false;
             })
         }
-        boardArray[i].push(tile)
+        boardArray[i].push(tile);
         row.appendChild(tile);
     }
     board.appendChild(row);
 }
+function showWaitingRoom() {
+    document.querySelector('.lobby-options').style.display = 'none';
+    document.getElementById('waiting-room').style.display = 'block';
+    document.getElementById('waiting-game-id').textContent = gameId;
+}
 
+function showGameScreen() {
+    lobbyScreen.style.display = 'none';
+    gameScreen.style.display = 'block';
+    document.getElementById('game-id-display').textContent = `Game: ${gameId}`;
+    document.getElementById('player-name-display').textContent = `Player: ${playerName}`;
+    renderBoard();
+}
+
+async function createGame() {
+    playerName = document.getElementById('create-player-name').value || 'Player 1';
+    try {
+        const response = await fetch('/api/game/create', {
+            method : 'POST',
+            headers : {'Content-Type' : 'application/json'},
+            body : JSON.stringify({player_name : playerName})
+            
+        });
+        const data = await response.json();
+        gameId = data.game_id;
+        playerID = data.playerID
+        showWaitingRoom();
+        startPolling();
+    } catch (error) {   
+        console.error('Error creating game:', error);
+        alert('Failed to create game. Please try again.');
+    }
+}
+async function fetchGameState() {
+    try {
+        const response = await fetch(`/api/game/${gameId}/state?player_id=${playerId}`);
+        const data = await response.json();
+        currentGameState = data;
+        updateGameDisplay();
+        return data;
+    } catch (error) {
+        console.error('Error fetching game state:', error);
+    }
+}
+
+async function playWord() {
+    if (selectedTiles.length === 0) {
+        alert('Please place tiles on the board first!');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/game/${gameId}/play`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                player_id: playerId,
+                tiles: selectedTiles
+            })
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            alert(error.error || 'Invalid move');
+            return;
+        }
+        
+        const data = await response.json();
+        addLogMessage(`Word played! Score: ${data.score}`);
+        selectedTiles = [];
+        await fetchGameState();
+    } catch (error) {
+        console.error('Error playing word:', error);
+        alert('Failed to play word. Please try again.');
+    }
+}
 let currBrickId = 0;
 let drawnBricks = draw(brickBag, 8);
 let hand = []
@@ -278,3 +388,35 @@ const returnButton = document.getElementById("return");
 returnButton.addEventListener("click", () => {
     returnBricks(hand)
 })
+const playButton = document.getElementById("play");
+playButton.addEventListener("click", () =>  {
+    playWord()
+})
+bricksContainer.addEventListener("drop", (event) => {
+    dropHandler(event);
+});
+bricksContainer.addEventListener("dragover", (event) => {
+    dragOverHandler(event);
+});
+createGameBtn.addEventListener('click', createGame);
+/*
+joinGameBtn.addEventListener('click', joinGame);
+startGameBtn.addEventListener('click', startGame);*/
+
+let pollingInterval;
+
+function startPolling() {
+    pollingInterval = setInterval(async () => {
+        await fetchGameState();
+        
+        // If game started, show game screen
+        if (currentGameState && currentGameState.game_started && lobbyScreen.style.display !== 'none') {
+            showGameScreen();
+        }
+    }, 2000); // Poll every 2 seconds
+}
+function stopPolling() {
+    if (pollingInterval) {
+        clearInterval(pollingInterval);
+    }
+}

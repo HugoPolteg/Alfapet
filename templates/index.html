@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <script src="{{ url_for('static', filename='js/script.js') }}" defer></script>
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    </head>
+    <body>
+        <h1>ALFAPET</h1>
+        <div id = "game" style="display: none;">
+            <div id = boardOuterEdge>
+                <div id = boardInnerEdge>
+                    <div id="board">
+                    </div>
+                </div>
+            </div>
+            <div id = "table">
+                <div id = "bricks"></div>
+                <div id = "buttons">
+                    <img src="{{ url_for('static', filename='images/shuffle.png') }}" id = "shuffle"></img>
+                    <img src="{{ url_for('static', filename='images/return.png') }}" id = "return"></img>
+                    <img src="{{ url_for('static', filename='images/play.jpg') }}" id = "play"></img>
+                </div>
+            </div>
+        </div>
+        <div id = "lobby">
+            <div class="lobby-options">
+                <div class="option-group">
+                    <h3>Skapa nytt spel</h3>
+                    <input type="text" id="create-player-name" placeholder="Ditt namn" value="Spelare 1">
+                    <button id="create-game-btn" class="btn btn-primary">Skapa Spel</button>
+                </div>
+                <div class="option-group">
+                    <h3>Gå med i spel</h3>
+                    <input type="text" id="join-game-id" placeholder="Spel ID">
+                    <input type="text" id="join-player-name" placeholder="Ditt namn" value="Spelare 2">
+                    <button id="join-game-btn" class="btn btn-primary">Gå Med i Spel</button>
+                </div>
+            </div>
+            <div id="waiting-room" style="display: none;">
+                <h3>Väntar på spelare...</h3>
+                <p>Spel-id: <strong id="waiting-game-id"></strong></p>
+                <p>Dela denna med andra spelare för att de ska kunna gå med!</p>
+                <div id="player-list"></div>
+                <button id="start-game-btn" class="btn btn-success">Starta Spel</button>
+            </div>
+        </div>
+        
+    </body>
+</html>
