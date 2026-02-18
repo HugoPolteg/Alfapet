@@ -5,6 +5,8 @@
         <script src="{{ url_for('static', filename='js/script.js') }}" defer></script>
         <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
         <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+        <title>Alfablyat</title>
+        <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/B.png') }}">
     </head>
     <body>
         <h1>ALFABLYAT</h1>
@@ -16,6 +18,7 @@
                 </div>
             </div>
             <div id = "table">
+                <div id = "score-board"></div>
                 <h2 id = "current-player-display"></h2>
                 <h2 id = "game-id-display"></h2>
                 <h2 id = "player-name-display"></h2>

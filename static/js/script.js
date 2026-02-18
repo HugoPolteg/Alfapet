@@ -330,6 +330,18 @@ function showGameScreen() {
     document.getElementById('player-name-display').textContent = `Spelare: ${playerName}`;
 }
 
+function updateScoreBoard(scoreBoard) {
+    const scoreBoardContainer = document.getElementById('score-board')
+    scoreBoardContainer.replaceChildren()
+    title = document.createElement("h2")
+    title.textContent = "Poänglista"
+    scoreBoardContainer.appendChild(title)
+    scoreBoard.forEach((player) => {
+        score = document.createElement("p")
+        score.textContent = `${player[1]} - ${player[0]}`
+        scoreBoardContainer.appendChild(score)
+    })
+}
 
 const shuffleButton = document.getElementById("shuffle");
 shuffleButton.addEventListener("click", () => {
@@ -424,6 +436,7 @@ socket.on("update", (update) => {
     currentPlayerName = update.currentPlayerName
     currentPos = update.brickPositions
     currentPlayerID = update.currentPlayerID
+    updateScoreBoard(update.scoreBoard)
     document.getElementById('current-player-display').textContent = `Nu spelar: ${currentPlayerName}`
     loadBoard(currentBoard, currentPos)
 })

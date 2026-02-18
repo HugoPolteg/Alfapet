@@ -50,24 +50,29 @@ def load_dictionary() -> dict:
     root = tree.getroot()
     for word in root.findall("word"):
         value = word.get("value").upper()
-        word_class = word.get("class")
-        comment = word.get("comment")
-        lang = word.get("lang")
+        word_class = "okänt" if word.get("class") is None else word.get("class")
+        comment =  "okänt" if word.get("comment") is None else word.get("comment")
+        lang = "okänt" if  word.get("lang") is None else  word.get("lang")
         translation_el = word.find("translation")
-        translation = translation_el.get("value") if translation_el is not None else ""
+        translation = translation_el.get("value") if translation_el is not None else "okänt"
         if value in sw_dictionary:
             sw_dictionary[value].append({"class" : word_class, "comment" : comment,
                 "language" : lang, "translation" : translation})
         else:
             sw_dictionary[value] = [{"class" : word_class, "comment" : comment,
                 "language" : lang, "translation" : translation}]
-        if(word_class == "vb"):
-            inflection_cont = word.find("paradigm")
-            if inflection_cont is not None:
-                inflections = inflection_cont.findall("inflection")
-                for inflection in inflections:
-                    sw_dictionary[inflection.get("value")] = {"class" : word_class, "comment" : comment,
-                "language" : lang, "translation" : translation}
+        inflection_cont = word.find("paradigm")
+        if inflection_cont is not None:
+            inflections = inflection_cont.findall("inflection")
+            for inflection in inflections:
+                value = inflection.get("value").upper()
+                if value in sw_dictionary:
+                    sw_dictionary[value].append({"class" : word_class, "comment" : comment,
+                        "language" : lang, "translation" : translation})
+                else:
+                    sw_dictionary[value] = [{"class" : word_class, "comment" : comment,
+                        "language" : lang, "translation" : translation}]
+                
     return sw_dictionary
 
 def get_brickbag():
@@ -316,16 +321,23 @@ def play_word(sid, data):
                 word_played  = word['word']
                 score += calculate_word_score(played_tiles)
                 print(f"Spelade {word_played} för {calculate_word_score(played_tiles)} poäng")
-            hand = draw(old_bricks=selected_tiles, game_id=game_id, player_index=game_state['turn'] % len(game_state['players']))
+            player_index = game_state['turn'] % len(game_state['players'])
+            game_state['players'][player_index]['score'] += score
+            games[game_id] = game_state
+            hand = draw(old_bricks=selected_tiles, game_id=game_id, player_index=player_index)
             game_state = next_turn(game_id)
-            
+            scores = []
+            for player in game_state['players']:
+                scores.append((player['score'], player['name']))
+            scores.sort(reverse=True)
             sio.emit(
                 "update",
                 {
                     'currentPlayerID' : game_state['current_player'],
                     'currentPlayerName' : players[game_state['current_player']],
                     'brickPositions' : game_state['brick_positions'],
-                    'placedBricks' : update_tiles(selected_tiles)
+                    'placedBricks' : update_tiles(selected_tiles),
+                    'scoreBoard' : scores
                 }, room=rooms[sid]
             )
             return {"ok" : True, "valid" : True, "score" : score, "msg": f"Spelade {main_word} för {score} poäng", "hand" : hand}
@@ -348,7 +360,5 @@ if __name__ == '__main__':
         print(f"Dictionary loaded: {len(dictionary)} words")
     except Exception as e:
         print(f"Warning: Could not load dictionary: {e}")
-        dictionary = {}
-    
-    
+        dictionary = {}    
     eventlet.wsgi.server(eventlet.listen(("0.0.0.0", 5000)), app)
