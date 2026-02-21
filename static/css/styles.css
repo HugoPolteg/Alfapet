@@ -129,7 +129,7 @@ sub {
     border-radius: 0.3vw;
     background-color: black;
 }
-#bricks {
+#bricks, #passframe {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
@@ -141,6 +141,6 @@ sub {
     border-radius: 0.3vw;
     border: 2px black solid;
 }
-#shuffle, #return, #play {
+.actionButton {
     width: 2vw;
 }

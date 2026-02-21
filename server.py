@@ -125,15 +125,26 @@ def get_brickbag():
 def draw(old_bricks, game_id, player_index):
     """Draws nr_bricks bricks from the bag of game_id
     Args:
-        old_bricks: array of old bricks : [{'id' : int, 'value' : int, 'letter' : str}]
+        old_bricks: array of old bricks : [{'id' : int}]
         game_id: int
     Returns:
         array of dicts"""
     game_state = games[game_id]
     brick_bag = game_state['brick_bag']
-    hand = [brick_bag.pop() for _ in range(len(old_bricks))]
     old_hand = game_state['players'][player_index]['hand']
-    new_hand = [brick for brick in old_hand if brick not in old_bricks] + hand
+    ids = []
+    for brick in old_bricks:
+        ids.append(brick['id'])
+    old_hand = [brick for brick in old_hand if brick['id'] not in ids]
+    pop_len = 0
+    if len(brick_bag) >= len(old_bricks):
+        pop_len = len(old_bricks)
+    elif len(brick_bag) > 0:
+        pop_len = len(brick_bag)
+    hand = []
+    if pop_len > 0:
+        hand = [brick_bag.pop() for _ in range(pop_len)]
+    new_hand = old_hand + hand
     game_state['players'][player_index]['hand'] = new_hand
     games[game_id] = game_state
     return new_hand
@@ -162,7 +173,8 @@ def create_game(player_name, sid):
         'game_started': False,
         'game_over': False,
         'first_move' : True,
-        'created_at': datetime.now().isoformat()
+        'created_at': datetime.now().isoformat(),
+        'end_turn' : -1
     }
     players[sid] = player_name
     games[game_id] = game_state
@@ -187,18 +199,19 @@ def join_game(player_name, game_id, sid):
     rooms[sid] = game_id
     return game_state
 
-def next_turn(game_id):
+def next_turn(game_id, passing_turn):
     """Changes turn to next player"""
     if game_id not in games:
         return None
     game_state = games[game_id]
-    game_state['first_move'] = False
+    if not passing_turn:
+        game_state['first_move'] = False
     game_state['turn'] += 1
     player_index = game_state['turn'] % len(game_state['players'])
     player_id = game_state['players'][player_index]['id']
     game_state['current_player'] = player_id
     player_name = game_state['players'][player_index]['name']
-    print(player_name + "s runda!")   
+    print(player_name + "s runda!")
     games[game_id] = game_state
     return game_state
 
@@ -293,6 +306,44 @@ def start(sid):
         return {"ok" : False}
 
 @sio.event
+def pass_turn(sid, data):
+    if sid in rooms:
+        game_id = rooms[sid]
+        game = games[game_id]
+        if sid != game['current_player']:
+            return {"ok" : True, "valid" : False, "reason" : f"{players[game['current_player']]} tur! Vänta innan du spelar."}
+        selected_tiles = data["selectedTiles"]
+        player_index = game['turn'] % len(game['players'])
+        
+        hand = draw(old_bricks=selected_tiles, game_id=game_id, player_index=player_index)
+        print(hand)
+        game = next_turn(game_id, True)
+        scores = []
+        for player in game['players']:
+            scores.append((player['score'], player['name']))
+        scores.sort(reverse=True)
+        if game['end_turn'] == game['turn']:
+            sio.emit(
+                "game_end", {
+                    'scoreBoard' : scores
+                }
+            )
+            return {"ok" : True, "valid" : True, "hand" : hand}
+        sio.emit(
+            "update",
+            {
+                'currentPlayerID' : game['current_player'],
+                'currentPlayerName' : players[game['current_player']],
+                'brickPositions' : game['brick_positions'],
+                'placedBricks' : update_tiles(selected_tiles),
+                'scoreBoard' : scores
+            }, room=rooms[sid]
+        )
+        return {"ok" : True, "valid" : True, "hand" : hand, "msg": f"Gav upp {len(selected_tiles)} brickor för nya",}
+    else:
+        return {"ok" : False}
+    
+@sio.event
 def play_word(sid, data):
     if sid in rooms:
         game_id = rooms[sid]
@@ -325,11 +376,24 @@ def play_word(sid, data):
             game_state['players'][player_index]['score'] += score
             games[game_id] = game_state
             hand = draw(old_bricks=selected_tiles, game_id=game_id, player_index=player_index)
-            game_state = next_turn(game_id)
+            game = games[game_id]
             scores = []
             for player in game_state['players']:
                 scores.append((player['score'], player['name']))
             scores.sort(reverse=True)
+            print(len(game['brick_bag']))
+            if game['end_turn'] < 0 and len(game['brick_bag']) == 0:
+                game['end_turn'] = game['turn'] + len(game['players'])
+                games[game_id] = game
+            if game['end_turn'] == game['turn']:
+                sio.emit(
+                    "game_end", {
+                        'scoreBoard' : scores
+                    }
+                )
+                return {"ok" : True, "valid" : True, "score" : score, "msg": f"Spelade {main_word} för {score} poäng", "hand" : hand}
+            game_state = next_turn(game_id, False)
+            
             sio.emit(
                 "update",
                 {

@@ -1,11 +1,11 @@
 import math
 
-def has_adjacent_tile(row, col, board):
+def has_adjacent_tile(row, col, board, board_dimensions):
     """Check if a position has an adjacent tile (not diagonal)"""
     directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]
     for dr, dc in directions:
         new_row, new_col = row + dr, col + dc
-        if 0 <= new_row < 15 and 0 <= new_col < 15:
+        if 0 <= new_row < board_dimensions[0] and 0 <= new_col < board_dimensions[1]:
             if board[new_row][new_col] is not None:
                 return True
     return False
@@ -37,7 +37,7 @@ def validate_placement(tiles_played, old_tile_positions, is_first_move, board_di
     else:
         if len(tiles_played) == 1:
             tile = tiles_played[0]
-            if not has_adjacent_tile(tile['row'], tile['col'], old_tile_positions):
+            if not has_adjacent_tile(tile['row'], tile['col'], old_tile_positions, board_dimensions):
                 return {'valid': False, 'reason': 'Enskild bricka måste placeras bredvid existerande ord!'}
             
 
@@ -62,7 +62,7 @@ def validate_placement(tiles_played, old_tile_positions, is_first_move, board_di
     if not is_first_move:
         has_connection = False
         for tile in tiles_played:
-            if has_adjacent_tile(tile['row'], tile['col'], old_tile_positions):
+            if has_adjacent_tile(tile['row'], tile['col'], old_tile_positions, board_dimensions):
                 has_connection = True
                 break
         
@@ -89,7 +89,7 @@ def extract_word_from_board(origin_tile, all_tile_positions, horizontal):
         max_index = origin_index
         while min_index > 0 and all_tile_positions[row][min_index - 1] is not None:
             min_index -= 1
-        while max_index < len(all_tile_positions[row]) and all_tile_positions[row][max_index + 1] is not None:
+        while max_index < len(all_tile_positions[row]) - 1 and all_tile_positions[row][max_index + 1] is not None:
             max_index += 1
         if min_index == max_index:
             return None

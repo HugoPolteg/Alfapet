@@ -24,10 +24,12 @@
                 <h2 id = "player-name-display"></h2>
                 <div id = "bricks"></div>
                 <div id = "buttons">
-                    <img src="{{ url_for('static', filename='images/shuffle.png') }}" id = "shuffle"></img>
-                    <img src="{{ url_for('static', filename='images/return.png') }}" id = "return"></img>
-                    <img src="{{ url_for('static', filename='images/play.jpg') }}" id = "play"></img>
+                    <img src="{{ url_for('static', filename='images/shuffle.png') }}" id = "shuffle" class="actionButton"></img>
+                    <img src="{{ url_for('static', filename='images/return.png') }}" id = "return" class="actionButton"></img>
+                    <img src="{{ url_for('static', filename='images/play.jpg') }}" id = "play" class="actionButton"></img>
+                    <img src="{{ url_for('static', filename='images/pass.png') }}" id="pass" class="actionButton"></img>
                 </div>
+                <div id = "passframe"></div>
             </div>
         </div>
         <div id = "lobby">

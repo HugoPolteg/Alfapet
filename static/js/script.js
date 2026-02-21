@@ -135,7 +135,11 @@ function dropHandler(ev) {
     }
     let dragged = document.getElementById(tileId);
     let target = ev.target
-    if(target.id != "bricks") {
+    if(target.id == "passframe") {
+        selectedTiles.push({
+            "id" : tileId, "pass" : true
+        })
+    } else if(target.id != "bricks") {
         target = ev.target.className == "" ? ev.target.parentElement : ev.target;
         if (target.className == "brick") {
             return false
@@ -151,7 +155,7 @@ function dropHandler(ev) {
         //dict {row, col, letter, value}
         let row = target.dataset.row
         let col = target.dataset.col
-        selectedTiles.push({'id': tileId, 'row' : row, "col" : col,
+        selectedTiles.push({'id': tileId, 'row' : row, "col" : col, "pass" : false,
             "letter" : draggedTile['letter'], "value": draggedTile['value']})
     }
     draggedTile = null
@@ -352,11 +356,18 @@ returnButton.addEventListener("click", () => {
     returnBricks(hand)
 })
 const playButton = document.getElementById("play");
-
+const passButton = document.getElementById("pass");
+const passFrame = document.getElementById("passframe");
 bricksContainer.addEventListener("drop", (event) => {
     dropHandler(event);
 });
 bricksContainer.addEventListener("dragover", (event) => {
+    dragOverHandler(event);
+});
+passFrame.addEventListener("drop", (event) => {
+    dropHandler(event);
+});
+passFrame.addEventListener("dragover", (event) => {
     dragOverHandler(event);
 });
 
@@ -400,7 +411,7 @@ startGameBtn.addEventListener('click', () => {
 
 playButton.addEventListener("click", () =>  {
     socket.emit("play_word", {
-        "selectedTiles" : selectedTiles
+        "selectedTiles" : selectedTiles.filter(tile => !tile["pass"])
     }, (response) => {
         if(response.ok) {
             if(!response.valid) {
@@ -414,6 +425,32 @@ playButton.addEventListener("click", () =>  {
                 });
                 returnBricks(hand)
 
+            }
+        }
+    })
+})
+
+passButton.addEventListener("click", () => {
+    passTiles = selectedTiles.filter(tile => tile["pass"])
+    socket.emit("pass_turn", {
+        "selectedTiles" : passTiles
+    }, (response) => {
+        if(response.ok) {
+            if(!response.valid) {
+                alert(response.reason)
+            } else {
+                passTiles.forEach(tile => {
+                    let brick = document.getElementById(tile['id']);
+                    brick.remove();
+                })
+                selectedTiles = []
+                hand = []                
+                response.hand.forEach(brick => {
+                    addBrick(brick['letter'], brick['value'], brick['id'], bricksContainer)
+                    hand.push(brick['id'])
+                });
+                console.log("Return", hand)
+                
             }
         }
     })
@@ -438,5 +475,12 @@ socket.on("update", (update) => {
     currentPlayerID = update.currentPlayerID
     updateScoreBoard(update.scoreBoard)
     document.getElementById('current-player-display').textContent = `Nu spelar: ${currentPlayerName}`
+    returnBricks(hand);
     loadBoard(currentBoard, currentPos)
+})
+socket.on("game_end", (end) => {
+    updateScoreBoard(end.scoreBoard)
+    alert(end.scoreBoard)
+    showLobby();
+
 })
