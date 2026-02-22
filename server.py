@@ -11,6 +11,9 @@ import os
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DICT_PATH = os.path.join(BASE_DIR, "dictionary.xml")
 WORDS_PATH = "/etc/secrets/messages.txt"
+print("Current working dir:", os.getcwd())
+print("Files here:", os.listdir())
+print("Dict path:", DICT_PATH)
 games = {}
 rooms = {}
 players = {}
