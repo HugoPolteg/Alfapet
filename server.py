@@ -425,17 +425,17 @@ def play_word(sid, data):
     else:
         return {"ok" : False}
 dictionary = {}
+# Load dictionary on startup
+print("Loading Swedish dictionary...")
+try:
+    dictionary = load_dictionary()
+    print(f"Dictionary loaded: {len(dictionary)} words")
+except Exception as e:
+    print(f"Warning: Could not load dictionary: {e}")
+    dictionary = {}    
 @sio.event
 def connect(sid, environ):
     print("Connected:", sid)
 
 if __name__ == '__main__':
-    # Load dictionary on startup
-    print("Loading Swedish dictionary...")
-    try:
-        dictionary = load_dictionary()
-        print(f"Dictionary loaded: {len(dictionary)} words")
-    except Exception as e:
-        print(f"Warning: Could not load dictionary: {e}")
-        dictionary = {}    
     eventlet.wsgi.server(eventlet.listen(("0.0.0.0", 5000)), app)
