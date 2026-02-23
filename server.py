@@ -132,7 +132,7 @@ def get_brickbag():
     brick_id = 0
     brickBag = []
     for  key, value in bricks.items():
-        for i in range(value["Number"]-5):
+        for i in range(value["Number"]):
             brickBag.append({"id": f"Brick{brick_id}", "letter" : key, "value": value["Value"]})
             brick_id += 1
     random.shuffle(brickBag)
